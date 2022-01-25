@@ -27,12 +27,26 @@ def serialize_tag(tag):
     }
 
 
+def get_likes_count(post):
+    likes_amount = post.likes.all().count()
+    return likes_amount
+
+
 def index(request):
 
-    most_popular_posts = []  # TODO. Как это посчитать?
+    post_with_likes = {}
+    posts = Post.objects.all()
+    for post in posts:
+        likes_amount = get_likes_count(post)
+        post_with_likes.update({post: likes_amount})
 
+    sorted_posts = sorted(post_with_likes.items(), key=lambda item: item[1], reverse=True)
+
+    most_popular_posts = [post[0] for post in sorted_posts][:5]  # TODO. Как это посчитать?
+    print(most_popular_posts)
     fresh_posts = Post.objects.order_by('published_at')
     most_fresh_posts = list(fresh_posts)[-5:]
+    print(most_fresh_posts)
 
     tags = Tag.objects.all()
     popular_tags = sorted(tags, key=get_related_posts_count)
