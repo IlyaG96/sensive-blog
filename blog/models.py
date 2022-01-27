@@ -1,7 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 
 
 class PostQuerySet(models.QuerySet):
@@ -11,7 +11,9 @@ class PostQuerySet(models.QuerySet):
         return posts_at_year
 
     def popular(self):
-        popular_posts = self.annotate(likes_amount=Count('likes')).order_by('-likes_amount')
+        popular_posts = (self.annotate(likes_amount=Count('likes')).prefetch_related('author')
+                         .order_by('-likes_amount')
+                         )
         return popular_posts
 
     def fetch_with_comments_count(self):
@@ -31,11 +33,25 @@ class PostQuerySet(models.QuerySet):
 
         return self
 
+    def fresh(self):
+        fresh_posts = self.order_by("-published_at").prefetch_related('author')
+        return fresh_posts
+
+    def prefetch_related_tags(self):
+        related_tags = Prefetch(
+            'tags',
+            queryset=Tag.objects.all().annotate(
+                related_post_num=Count('posts'))
+        )
+
+        return self.prefetch_related(related_tags)
+
 
 class TagQuerySet(models.QuerySet):
 
     def popular(self):
-        popular_tags = self.annotate(posts_amount=Count('posts')).order_by('-posts_amount')
+        popular_tags = (self.annotate(
+            posts_amount=Count('posts')).order_by('-posts_amount'))
         return popular_tags
 
 
