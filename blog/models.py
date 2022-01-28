@@ -7,11 +7,13 @@ from django.db.models import Count, Prefetch
 class PostQuerySet(models.QuerySet):
 
     def year(self, year):
-        posts_at_year = self.filter(published_at__year=year).order_by('published_at')
+        posts_at_year = (self.filter(published_at__year=year)
+                             .order_by('published_at'))
+
         return posts_at_year
 
     def popular(self):
-        popular_posts = (self.annotate(likes_amount=Count('likes')).prefetch_related('author')
+        popular_posts = (self.annotate(likes_amount=Count('likes'))
                          .order_by('-likes_amount')
                          )
         return popular_posts

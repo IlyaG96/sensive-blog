@@ -1,8 +1,11 @@
 from django.shortcuts import render
-from blog.models import Comment, Post, Tag
+from blog.models import Post, Tag
 
 
 def serialize_post(post):
+
+    serialized_tags = [serialize_tag(tag) for tag in post.tags.all()]
+
     return {
         'title': post.title,
         'teaser_text': post.text[:200],
@@ -11,8 +14,8 @@ def serialize_post(post):
         'image_url': post.image.url if post.image else None,
         'published_at': post.published_at,
         'slug': post.slug,
-        'tags': [serialize_tag(tag) for tag in post.tags.all()],
-        'first_tag_title': post.tags.all()[0].title,
+        'tags': serialized_tags,
+        'first_tag_title': serialized_tags[0]['title'],
     }
 
 
@@ -24,11 +27,14 @@ def serialize_tag(tag):
 
 
 def index(request):
-    most_popular_posts = (Post.objects.prefetch_related_tags()
+    most_popular_posts = (Post.objects
+                          .prefetch_related_tags()
                           .popular()[:5]
+                          .prefetch_related('author')
                           .fetch_with_comments_count()
                           )
-    most_fresh_posts = (Post.objects.prefetch_related_tags()
+    most_fresh_posts = (Post.objects
+                        .prefetch_related_tags()
                         .fresh()[:5]
                         .fetch_with_comments_count()
                         )
@@ -48,6 +54,7 @@ def index(request):
 def post_detail(request, slug):
     post = (Post.objects
             .prefetch_related_tags()
+            .popular()
             .get(slug=slug)
             )
 
@@ -59,25 +66,23 @@ def post_detail(request, slug):
          } for comment in comments
     ]
 
-    likes = post.likes.all().count()
-    related_tags = post.tags.all()
-
     serialized_post = {
         'title': post.title,
         'text': post.text,
         'author': post.author.username,
         'comments': serialized_comments,
-        'likes_amount': likes,
+        'likes_amount': post.likes_amount,
         'image_url': post.image.url if post.image else None,
         'published_at': post.published_at,
         'slug': post.slug,
-        'tags': [serialize_tag(tag) for tag in related_tags],
+        'tags': [serialize_tag(tag) for tag in post.tags.all()],
     }
 
     most_popular_tags = Tag.objects.popular()[:5]
 
     most_popular_posts = (Post.objects
                           .popular()[:5]
+                          .prefetch_related('author')
                           .prefetch_related_tags()
                           .fetch_with_comments_count()
                           )
@@ -99,11 +104,15 @@ def tag_filter(request, tag_title):
 
     most_popular_posts = (Post.objects
                           .popular()[:5]
+                          .prefetch_related('author')
                           .prefetch_related_tags()
                           .fetch_with_comments_count()
                           )
 
-    related_posts = tag.posts.prefetch_related('author').prefetch_related_tags().fetch_with_comments_count()[:20]
+    related_posts = (tag.posts
+                        .prefetch_related('author')
+                        .prefetch_related_tags()
+                        .fetch_with_comments_count()[:20])
 
     context = {
         'tag': tag.title,
