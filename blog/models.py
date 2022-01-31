@@ -36,7 +36,7 @@ class PostQuerySet(models.QuerySet):
         return self
 
     def fresh(self):
-        fresh_posts = self.order_by("-published_at").prefetch_related('author')
+        fresh_posts = self.order_by('-published_at').prefetch_related('author')
         return fresh_posts
 
     def prefetch_related_tags(self):
