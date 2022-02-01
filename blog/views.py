@@ -63,12 +63,12 @@ def post_detail(request, slug):
                 .get(slug=slug)
                 )
     except Post.DoesNotExist:
-        response = ("<html>"
-                    "<body>"
-                    "Такого поста не существует"
-                    "<p><a href = '/'>На главную</a></p>"
-                    "</body>"
-                    "</html>")
+        response = ('<html>'
+                    '<body>'
+                    'Такого поста не существует'
+                    '<p><a href = "/">На главную</a></p>'
+                    '</body>'
+                    '</html>')
         return HttpResponse(response)
 
     comments = (post.comments
@@ -118,12 +118,12 @@ def tag_filter(request, tag_title):
     try:
         tag = Tag.objects.get(title=tag_title)
     except Tag.DoesNotExist:
-        response = ("<html>"
-                    "<body>"
-                    "Такого тега не существует"
-                    "<p><a href = '/'>На главную</a></p>"
-                    "</body>"
-                    "</html>")
+        response = ('<html>'
+                    '<body>'
+                    'Такого тега не существует'
+                    '<p><a href = "/">На главную</a></p>'
+                    '</body>'
+                    '</html>')
         return HttpResponse(response)
 
     most_popular_tags = Tag.objects.popular()[:5]
