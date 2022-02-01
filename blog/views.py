@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from blog.models import Post, Tag
+from django.http import HttpResponse
 
 
 def serialize_post(post):
@@ -54,12 +55,21 @@ def index(request):
 
 def post_detail(request, slug):
 
-    post = (Post.objects
-            .prefetch_related_tags()
-            .popular()
-            .select_related('author')
-            .get(slug=slug)
-            )
+    try:
+        post = (Post.objects
+                .prefetch_related_tags()
+                .popular()
+                .select_related('author')
+                .get(slug=slug)
+                )
+    except Post.DoesNotExist:
+        response = ("<html>"
+                    "<body>"
+                    "Такого поста не существует"
+                    "<p><a href = '/'>На главную</a></p>"
+                    "</body>"
+                    "</html>")
+        return HttpResponse(response)
 
     comments = (post.comments
                 .prefetch_related('post')
@@ -105,7 +115,16 @@ def post_detail(request, slug):
 
 
 def tag_filter(request, tag_title):
-    tag = Tag.objects.get(title=tag_title)
+    try:
+        tag = Tag.objects.get(title=tag_title)
+    except Tag.DoesNotExist:
+        response = ("<html>"
+                    "<body>"
+                    "Такого тега не существует"
+                    "<p><a href = '/'>На главную</a></p>"
+                    "</body>"
+                    "</html>")
+        return HttpResponse(response)
 
     most_popular_tags = Tag.objects.popular()[:5]
 
